@@ -151,7 +151,7 @@ function ProfileForm({ user }: { user: User }) {
           <p className="mb-2 text-sm" id="avatar-label">
             Avatar
           </p>
-          <div className="flex items-center gap-5" role="group" aria-labelledby="avatar-label">
+          <div className="flex flex-wrap items-center gap-x-5 gap-y-3" role="group" aria-labelledby="avatar-label">
             {user.avatarUrl ? (
               <img src={user.avatarUrl} alt="Seu avatar" width={50} height={50} className="size-[50px] rounded-full object-cover" />
             ) : (

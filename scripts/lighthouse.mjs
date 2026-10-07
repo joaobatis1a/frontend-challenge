@@ -44,9 +44,16 @@ async function waitFor(url, timeoutMs = 60_000) {
 }
 
 let server
+// O preview roda dentro de um shell: é preciso encerrar a árvore de processos
+// inteira, senão o servidor fica vivo na porta 4173 (no Windows, kill() só fecha o shell).
+function stopServer() {
+  if (!server?.pid) return
+  if (process.platform === 'win32') spawn('taskkill', ['/pid', String(server.pid), '/T', '/F'], { stdio: 'ignore' })
+  else process.kill(-server.pid)
+}
 if (!process.env.LH_BASE_URL) {
   console.log('> build + preview')
-  server = spawn('npm run build && npm run preview', { shell: true, stdio: 'ignore' })
+  server = spawn('npm run build && npm run preview', { shell: true, stdio: 'ignore', detached: process.platform !== 'win32' })
   await waitFor(BASE, 180_000)
 }
 
@@ -88,7 +95,7 @@ try {
   }
 } finally {
   await chrome.kill()
-  server?.kill()
+  stopServer()
 }
 
 // Resumo com medianas
