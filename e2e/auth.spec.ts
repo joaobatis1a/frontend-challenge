@@ -53,6 +53,26 @@ test.describe('conta e sessão', () => {
     await expect(page.getByText('Neon Vessel #552')).toHaveCount(0)
   })
 
+  test('3c. sessão expira pela passagem do tempo (relógio controlado)', async ({ page }) => {
+    // O relógio da página é controlado: a sessão simulada dura 1 h.
+    await page.clock.install()
+    await start(page)
+    await loginAt(page, 'ana', '/profile')
+    await expect(page.getByLabel('Nome de exibição')).toHaveValue('Ana Colecionadora')
+
+    await page.clock.fastForward('01:01:00')
+    // A próxima requisição autenticada recebe session_expired. Ela pode vir da
+    // própria reconciliação do app (o socket reconecta ao avançar o relógio) ou
+    // da navegação abaixo, se o app ainda estiver na mesma tela.
+    const walletsLink = page.getByRole('link', { name: 'Carteiras', exact: true }).first()
+    if (await walletsLink.isVisible()) await walletsLink.click().catch(() => undefined)
+    await expect(page).toHaveURL(/\/login\?redirect=/)
+    await expect(page.getByText(/Sua sessão expirou/).first()).toBeVisible()
+    await login(page, 'ana')
+    // Volta para onde estava quando a sessão expirou.
+    await expect(page).toHaveURL(/\/(profile|wallets)$/)
+  })
+
   test('3b. credenciais inválidas mostram erro sem sair do login @mobile', async ({ page }) => {
     await start(page, { path: '/login' })
     const dialog = page.getByRole('dialog')

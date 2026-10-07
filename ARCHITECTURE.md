@@ -188,6 +188,41 @@ Garantias no cliente (`src/lib/realtime/apply.ts`):
 - Feedback: toasts do Sonner em região `aria-live`, contagem de resultados anunciada, status de pedido em `role="status"` e indicador "Reconectando ao tempo real".
 - Estados não dependem só de cor: edição esgotada riscada e com texto, favorito com `aria-pressed` e ícone preenchido, avisos com ícone e texto.
 
+## Testes (Playwright)
+
+São 41 testes contra o build de produção com MSW, em Chromium desktop (1440×900) e mobile (Pixel 7, só os marcados `@mobile`). Cada teste parte de um estado isolado (`__mock.reset()`, armazenamento limpo, cenário explícito). A latência e os desfechos vêm dos cenários, os eventos são disparados por `window.__mock` (sempre passando pelo `socket.io-client`) e o relógio é controlado com `page.clock` no teste de expiração de sessão por tempo.
+
+| # | Cenário do desafio | Arquivo |
+| --- | --- | --- |
+| 1, 2, 12 | Catálogo/histórico, detalhe/inexistente, skeletons/falha/nova tentativa | `e2e/catalog.spec.ts` |
+| 3 | Cadastro, login, expiração (inclusive pelo relógio), logout, troca de usuário | `e2e/auth.spec.ts` |
+| 4, 5 | Favoritos com rollback; carrinho, cupom, persistência | `e2e/cart.spec.ts` |
+| 6, 7 | Compra completa; recusa, clique repetido, timeout | `e2e/purchase.spec.ts` |
+| 8 | Perfil, avatar, senha, carteiras | `e2e/account.spec.ts` |
+| 9, 10 | Preço/estoque no checkout; duplicados, antigos, desconexão, pendente | `e2e/realtime.spec.ts` |
+| 11 | Teclado, foco em diálogos, validação | `e2e/a11y.spec.ts` |
+| — | Regressão visual: início, detalhe, carrinho, pagamento | `e2e/visual.spec.ts` |
+| — | Contratos da API simulada | `e2e/mock-api.spec.ts` |
+
+As baselines visuais (`e2e/__screenshots__/`) foram geradas no Windows. Em outro sistema, o antialiasing das fontes muda, então elas precisam ser geradas de novo (`npm run test:e2e:update`).
+
+## Performance e Lighthouse
+
+Mediana de 3 medições por página e perfil, build de produção, cenário padrão. Configuração em `scripts/lighthouse.mjs`; relatórios HTML/JSON, versões e ambiente em `lighthouse/`.
+
+| Página | Perfil | Performance | Accessibility | Best Practices | SEO | LCP | CLS | TBT |
+| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| Início | mobile | 75 | 100 | 100 | 100 | 4.24 s | 0.015 | 265 ms |
+| Início | desktop | 100 | 100 | 100 | 100 | 0.78 s | 0.002 | 27 ms |
+| Detalhe | mobile | 80 | 100 | 100 | 100 | 4.16 s | 0.000 | 180 ms |
+| Detalhe | desktop | 99 | 100 | 100 | 100 | 0.93 s | 0.000 | 0 ms |
+
+**Abaixo da meta: Performance no perfil mobile (75–80).**
+
+- **Causa:** o elemento de LCP é a primeira imagem do catálogo (no detalhe, a imagem do NFT), e ela depende dos dados da API. Antes da primeira resposta, o navegador precisa baixar e executar a camada de mocks (MSW, interceptador de WebSocket e base simulada, ~170 KB gzip) e registrar o service worker. Na emulação mobile (CPU 4× mais lenta, 4G lento), esse trabalho domina o LCP. Com uma API real, esse custo não existiria.
+- **O que já foi feito:** o app baixa em paralelo com o MSW; as rotas carregam sob demanda; a imagem do LCP tem `preload` e `fetchpriority`; as imagens são WebP de 15–25 KB com dimensões fixas (CLS ≈ 0); a fonte é local; o conteúdo tem altura mínima, para o rodapé não se deslocar.
+- **Sem atalhos:** nada foi desligado para a auditoria. Ela carrega as mesmas imagens, fontes, mocks e tempo real da entrega.
+
 ## Desvios do Figma e decisões de UX
 
 - **Imagens:** as ilustrações foram recortadas dos frames exportados (`scripts/extract-figma-assets.py`) e convertidas para WebP, porque não havia acesso aos assets originais. A galeria usa variações (rosto ampliado e espelhado) da mesma ilustração.

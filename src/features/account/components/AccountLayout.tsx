@@ -7,9 +7,9 @@ import { comingSoon } from '@/components/layout/comingSoon'
 import { useLogout } from '@/features/auth/hooks'
 import { cn } from '@/lib/utils'
 
-// No mobile vira uma faixa horizontal; no desktop, a lista vertical do layout.
+// No mobile e no tablet vira uma faixa horizontal; no desktop, a lista vertical do layout.
 const item =
-  'flex w-full items-center gap-3 whitespace-nowrap border-b-4 border-transparent px-4 py-3 text-sm text-brand hover:bg-secondary md:border-b-0 md:border-l-4 aria-[current=page]:border-primary aria-[current=page]:bg-secondary/40'
+  'flex w-full items-center gap-3 whitespace-nowrap border-b-4 border-transparent px-4 py-3 text-sm text-brand hover:bg-secondary lg:border-b-0 lg:border-l-4 aria-[current=page]:border-primary aria-[current=page]:bg-secondary/40'
 
 /** Menu lateral "Meu perfil" compartilhado por Perfil e Carteiras. */
 export function AccountLayout({ title, children }: { title: string; children: ReactNode }) {
@@ -24,10 +24,10 @@ export function AccountLayout({ title, children }: { title: string; children: Re
   }
 
   return (
-    <Container className="grid gap-8 py-8 md:grid-cols-[310px_1fr] md:gap-7">
-      <nav aria-label="Meu perfil" className="min-w-0 self-start rounded bg-card md:py-4">
-        <h2 className="hidden px-3 pb-2 text-lg font-bold md:block">Meu perfil</h2>
-        <ul className="flex overflow-x-auto md:flex-col">
+    <Container className="grid gap-8 py-8 lg:grid-cols-[310px_1fr] lg:gap-7">
+      <nav aria-label="Meu perfil" className="min-w-0 self-start rounded bg-card lg:py-4">
+        <h2 className="hidden px-3 pb-2 text-lg font-bold lg:block">Meu perfil</h2>
+        <ul className="flex overflow-x-auto lg:flex-col">
           <li>
             <Link to="/profile" className={item} activeOptions={{ includeHash: true }}>
               <UserRound className="size-4" aria-hidden /> Dados do perfil
@@ -63,7 +63,7 @@ export function AccountLayout({ title, children }: { title: string; children: Re
               <AlertTriangle className="size-4" aria-hidden /> Suporte
             </button>
           </li>
-          <li className="md:mt-1 md:border-t md:border-border md:pt-1">
+          <li className="lg:mt-1 lg:border-t lg:border-border lg:pt-1">
             <button type="button" className={cn(item, 'font-bold')} onClick={() => void signOut()} disabled={logout.isPending}>
               <LogOut className="size-4" aria-hidden /> Sair
             </button>
