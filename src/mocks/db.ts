@@ -10,7 +10,7 @@ import {
   type SeedNft,
 } from './seed'
 
-const STORAGE_KEY = 'mock:db:v2'
+const STORAGE_KEY = 'mock:db:v3'
 
 export interface DbUser extends User {
   salt: string

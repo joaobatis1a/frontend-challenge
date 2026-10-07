@@ -11,6 +11,9 @@ export function MobileNav() {
   const { data: cart } = useCart()
   const count = cartItemCount(cart)
 
+  // Telas com barra de ação própria no mobile (layout sem navegação inferior).
+  if (/^\/(nft|cart|checkout|login|signup|orders)/.test(pathname)) return null
+
   return (
     <nav
       aria-label="Principal"

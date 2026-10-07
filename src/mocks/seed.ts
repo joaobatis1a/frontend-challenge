@@ -78,12 +78,8 @@ const NOUNS: Record<Persona, string[]> = {
   baron: ['Baron', 'Vessel', 'Regent'],
   golden: ['Beat', 'Signal', 'Frequency'],
 }
-const COLLECTIONS: Record<Persona, string> = {
-  emerald: 'Kurio Apes',
-  nomad: 'Nomad Club',
-  baron: 'Ivory Society',
-  golden: 'Golden Frequencies',
-}
+/** Coleções misturam personagens, como em "Mais desta coleção" no layout. */
+const COLLECTIONS = ['Kurio Apes', 'Kurio Editions', 'Golden Frequencies', 'Nomad Club']
 const ATTRIBUTES: Record<Persona, string[]> = {
   emerald: ['Óculos', 'Esmeralda'],
   nomad: ['Chapéu', 'Moletom'],
@@ -130,6 +126,7 @@ export function buildSeedNfts(): SeedNft[] {
     const soldOut = SOLD_OUT_INDEXES.has(i)
     const rarity = RARITIES[Math.floor(rand(7) * RARITIES.length)] ?? 'Comum'
     const creator = CREATORS[(i * 5) % CREATORS.length] ?? 'Nova Sato'
+    const collection = COLLECTIONS[Math.floor(i / 2) % COLLECTIONS.length] ?? 'Kurio Apes'
 
     // Edição aberta (padrão), 1/50, 1/10 e, em alguns, a peça única 1/1.
     const editions: NftEdition[] = [
@@ -161,6 +158,9 @@ export function buildSeedNfts(): SeedNft[] {
       editions.unshift({ id: `${id}-one`, label: '1/1', priceEth: ethMul(basePrice, '10'), total: 1, available: soldOut ? 0 : 1 })
     }
 
+    // Mesma ordem do layout: 1/1, 1/10, 1/50, Aberta (da mais rara para a mais comum).
+    editions.sort((a, b) => a.total - b.total)
+
     // Casos de borda determinísticos para testes de limite de quantidade.
     if (i === 10) {
       const std = editions.find((e) => e.label === 'Aberta')
@@ -184,13 +184,13 @@ export function buildSeedNfts(): SeedNft[] {
       id,
       name: `${name} #${token}`,
       tokenId: `#0${token}`,
-      collection: COLLECTIONS[persona],
+      collection,
       category: NFT_CATEGORIES[i % NFT_CATEGORIES.length] ?? 'digital-art',
       network: NETWORKS[Math.floor(i / 2) % NETWORKS.length] ?? 'ethereum',
       rarity,
       creator: { id: `creator-${(i * 5) % CREATORS.length}`, name: creator },
       persona,
-      description: `Um colecionável digital finalizado à mão da coleção ${COLLECTIONS[persona]}, verificado na rede, com arte desbloqueável e acesso para colecionadores.`,
+      description: `Um colecionável digital finalizado à mão da coleção ${collection}, verificado na rede, com arte desbloqueável e acesso para colecionadores.`,
       attributes: [
         ...ATTRIBUTES[persona].map((value) => ({ trait: 'Traço', value })),
         { trait: 'Raridade', value: rarity },
