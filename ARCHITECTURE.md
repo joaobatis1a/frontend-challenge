@@ -170,7 +170,7 @@ Garantias no cliente (`src/lib/realtime/apply.ts`):
 ## Mocks (MSW)
 
 - **Banco** em memória, persistido no `localStorage` (`mock:db:v3`). Por isso catálogo, favoritos, carrinho, perfil, carteiras e pedidos ficam consistentes entre si e após refresh. `reset()` volta ao seed determinístico.
-- **Fixtures:** 48 NFTs (9 coleções, 3 redes, edições 1/1, 1/10, 1/50 e aberta), com casos de borda fixos: `nft-10`, `nft-19`, `nft-31` e `nft-43` esgotados; `nft-11` com só 2 unidades; `nft-13` com uma edição esgotada; e 2 usuários.
+- **Fixtures:** 48 NFTs (9 categorias, 4 coleções, 3 redes, edições 1/1, 1/10, 1/50 e aberta), com casos de borda fixos: `nft-10`, `nft-19`, `nft-31` e `nft-43` esgotados; `nft-11` com só 2 unidades; `nft-13` com uma edição esgotada; e 2 usuários.
 - **Determinismo:** a latência dentro da faixa do cenário vem de um gerador pseudoaleatório com semente, e os cenários "de primeira vez" (preço muda, esgota, timeout) disparam uma única vez por cenário.
 - **Uma mudança, dois canais:** toda alteração de preço/estoque (controles, pedido criado, pedido recusado) grava no banco **e** emite `nft.updated`, então REST e eventos ficam coerentes.
 - **Limitações do transporte simulado:**
