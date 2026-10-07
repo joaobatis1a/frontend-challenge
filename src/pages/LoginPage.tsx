@@ -6,6 +6,7 @@ import { Field, PasswordInput, inputClass } from '@/components/forms/Field'
 import { focusFirstError, useFormErrors } from '@/components/forms/useFormErrors'
 import { comingSoon } from '@/components/layout/comingSoon'
 import { useLogin } from '@/features/auth/hooks'
+import { useSession } from '@/lib/session/store'
 import { AuthDialog, safeRedirect } from '@/features/auth/components/AuthDialog'
 
 const loginForm = loginSchema.omit({ guestCartId: true })
@@ -17,6 +18,7 @@ export function LoginPage() {
   const formRef = useRef<HTMLFormElement>(null)
   const { errors, formError, validate, fromApi } = useFormErrors(loginForm)
   const [values, setValues] = useState({ email: '', password: '' })
+  const { expired } = useSession()
 
   const submit = (e: FormEvent) => {
     e.preventDefault()
@@ -38,6 +40,11 @@ export function LoginPage() {
   return (
     <AuthDialog mode="login" redirect={redirect} description="Entre para gerenciar sua carteira, coleção e perfil de criador.">
       <form ref={formRef} onSubmit={submit} noValidate className="flex flex-col gap-3">
+        {expired && !formError && (
+          <p role="status" className="rounded border border-primary/60 px-3 py-2 text-sm text-brand">
+            Sua sessão expirou. Entre novamente para continuar de onde parou.
+          </p>
+        )}
         {formError && (
           <p role="alert" className="rounded border border-destructive/60 px-3 py-2 text-sm text-destructive">
             {formError}

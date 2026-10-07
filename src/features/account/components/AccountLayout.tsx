@@ -16,13 +16,12 @@ export function AccountLayout({ title, children }: { title: string; children: Re
   const logout = useLogout()
   const navigate = useNavigate()
 
-  const signOut = () =>
-    logout.mutate(undefined, {
-      onSettled: () => {
-        toast.success('Você saiu da sua conta.')
-        void navigate({ to: '/' })
-      },
-    })
+  // mutateAsync: o aviso e a navegação acontecem mesmo que este componente desmonte no meio.
+  const signOut = async () => {
+    await logout.mutateAsync().catch(() => undefined)
+    toast.success('Você saiu da sua conta.')
+    void navigate({ to: '/' })
+  }
 
   return (
     <Container className="grid gap-8 py-8 md:grid-cols-[310px_1fr] md:gap-7">
@@ -65,7 +64,7 @@ export function AccountLayout({ title, children }: { title: string; children: Re
             </button>
           </li>
           <li className="md:mt-1 md:border-t md:border-border md:pt-1">
-            <button type="button" className={cn(item, 'font-bold')} onClick={signOut} disabled={logout.isPending}>
+            <button type="button" className={cn(item, 'font-bold')} onClick={() => void signOut()} disabled={logout.isPending}>
               <LogOut className="size-4" aria-hidden /> Sair
             </button>
           </li>

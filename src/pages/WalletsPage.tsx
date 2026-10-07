@@ -161,7 +161,7 @@ function WalletForm({ wallet, isPrimary, onDone }: { wallet?: WalletWithConnecti
         </Field>
         <Field label="Rede" required error={errors.network}>
           {(p) => (
-            <Select value={values.network} onValueChange={(v) => set({ network: v as NetworkId })}>
+            <Select value={values.network} onValueChange={(v) => v && set({ network: v as NetworkId })}>
               <SelectTrigger {...p} className="h-10 w-full rounded border-input bg-transparent dark:bg-transparent">
                 <SelectValue placeholder="Selecione uma rede" />
               </SelectTrigger>
@@ -187,7 +187,7 @@ function WalletForm({ wallet, isPrimary, onDone }: { wallet?: WalletWithConnecti
         </Field>
         <Field label="Tipo de carteira" required error={errors.provider}>
           {(p) => (
-            <Select value={values.provider} onValueChange={(v) => set({ provider: v as WalletProvider })}>
+            <Select value={values.provider} onValueChange={(v) => v && set({ provider: v as WalletProvider })}>
               <SelectTrigger {...p} className="h-10 w-full rounded border-input bg-transparent dark:bg-transparent">
                 <SelectValue placeholder="Selecione uma carteira" />
               </SelectTrigger>

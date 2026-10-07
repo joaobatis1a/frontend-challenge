@@ -121,7 +121,7 @@ export function HomePage() {
               {!isDesktop && searchBox}
               <label className="flex items-center gap-1 text-sm">
                 <span id="sort-label">Ordenar por:</span>
-                <Select value={search.sort ?? 'newest'} onValueChange={(v) => update({ sort: v as NftSort })}>
+                <Select value={search.sort ?? 'newest'} onValueChange={(v) => v && update({ sort: v as NftSort })}>
                   <SelectTrigger aria-labelledby="sort-label" className="h-8 border-0 bg-transparent px-1 text-sm shadow-none dark:bg-transparent">
                     <SelectValue />
                   </SelectTrigger>

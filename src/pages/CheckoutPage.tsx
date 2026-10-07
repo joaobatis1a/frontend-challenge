@@ -192,7 +192,8 @@ function Checkout({ user }: { user: User }) {
             </Field>
             <Field label="Rede" required error={errors.network}>
               {(p) => (
-                <Select value={draft.network} onValueChange={(v) => update({ network: v as NetworkId })}>
+                <Select value={draft.network} // O Radix Select dentro de <form> às vezes emite '' (bug conhecido): ignoramos.
+                  onValueChange={(v) => v && update({ network: v as NetworkId })}>
                   <SelectTrigger {...p} className="h-10 w-full rounded border-input bg-transparent dark:bg-transparent">
                     <SelectValue placeholder="Selecione uma rede" />
                   </SelectTrigger>

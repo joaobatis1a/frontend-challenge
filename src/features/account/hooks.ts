@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import type { AvatarInput, PasswordChangeInput, ProfileUpdateInput, User } from '@/contracts/auth'
-import type { WalletCreateInput, WalletUpdateInput } from '@/contracts/wallets'
-import { api } from '@/lib/api/endpoints'
+import type { WalletConnection, WalletCreateInput, WalletUpdateInput } from '@/contracts/wallets'
+import { api, type WalletWithConnection } from '@/lib/api/endpoints'
 import { keys } from '@/lib/query/keys'
 import { sessionStore } from '@/lib/session/store'
 import { useAuth, useOwner } from '@/features/auth/hooks'
@@ -60,5 +60,22 @@ export const useCreateWallet = () => useWalletMutation((input: WalletCreateInput
 export const useUpdateWallet = () =>
   useWalletMutation(({ id, input }: { id: string; input: WalletUpdateInput }) => api.wallets.update(id, input))
 export const useRemoveWallet = () => useWalletMutation((id: string) => api.wallets.remove(id))
-export const useConnectWallet = () => useWalletMutation((id: string) => api.wallets.connect(id))
-export const useDisconnectWallet = () => useWalletMutation((id: string) => api.wallets.disconnect(id))
+/**
+ * Conectar/desconectar: a resposta já diz o novo estado, então ele vai direto
+ * para o cache (o botão "Confirmar compra" enxerga a conexão na hora).
+ */
+function useConnectionMutation(fn: (id: string) => Promise<WalletConnection>) {
+  const qc = useQueryClient()
+  const owner = useOwner()
+  return useMutation({
+    mutationFn: fn,
+    onSuccess: ({ walletId, connected }) =>
+      qc.setQueryData<WalletWithConnection[]>(keys.wallets(owner), (list) =>
+        list?.map((w) => (w.id === walletId ? { ...w, connected } : w)),
+      ),
+    onSettled: () => qc.invalidateQueries({ queryKey: keys.wallets(owner) }),
+  })
+}
+
+export const useConnectWallet = () => useConnectionMutation((id) => api.wallets.connect(id))
+export const useDisconnectWallet = () => useConnectionMutation((id) => api.wallets.disconnect(id))
