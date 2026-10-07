@@ -46,7 +46,7 @@ export const authHandlers = [
     if (blocked) return blocked
     const parsed = parseBody(signupSchema, await readJson(request))
     if (!parsed.ok) return parsed.response
-    const { name, email, password, guestCartId } = parsed.data
+    const { name, username, email, password, guestCartId } = parsed.data
 
     const db = getDb()
     if (db.users.some((u) => u.email === email)) {
@@ -54,12 +54,17 @@ export const authHandlers = [
         fieldErrors: { email: 'Este e-mail já está cadastrado' },
       })
     }
+    if (username && db.users.some((u) => u.username.toLowerCase() === username.toLowerCase())) {
+      return apiError('validation_error', 'Nome de usuário já em uso.', {
+        fieldErrors: { username: 'Este nome de usuário já está em uso' },
+      })
+    }
     const salt = `salt-${nextId('guest')}-${Date.now()}`
     const user = {
       id: `user-${Date.now().toString(36)}`,
       name,
       email,
-      username: usernameFrom(email),
+      username: username ?? usernameFrom(email),
       bio: '',
       ensName: null,
       avatarUrl: null,

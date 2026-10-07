@@ -31,6 +31,12 @@ const ensNameSchema = z
 export const signupSchema = z.object({
   /** No cadastro o layout pede o nome de usuário; ele também vira o nome de exibição. */
   name: z.string().trim().min(2, 'Informe seu nome'),
+  username: z
+    .string()
+    .trim()
+    .min(3, 'Mínimo de 3 caracteres')
+    .regex(/^[a-z0-9_]+$/i, 'Use apenas letras, números e _')
+    .optional(),
   email: z.string().trim().toLowerCase().email('E-mail inválido'),
   password: z
     .string()
