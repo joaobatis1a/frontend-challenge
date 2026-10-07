@@ -8,10 +8,11 @@ export const imagePath = (nft: Pick<SeedNft, 'persona'>, suffix = ''): string =>
 export function toSummary(nft: SeedNft): NftSummary {
   const inStock = nft.editions.some((e) => e.available > 0)
   const pool = inStock ? nft.editions.filter((e) => e.available > 0) : nft.editions
-  const priceFromEth = pool.reduce(
-    (min, e) => (ethGt(min, e.priceEth) ? e.priceEth : min),
-    pool[0]?.priceEth ?? '0',
+  const cheapest = pool.reduce<(typeof pool)[number] | undefined>(
+    (min, e) => (!min || ethGt(min.priceEth, e.priceEth) ? e : min),
+    undefined,
   )
+  const priceFromEth = cheapest?.priceEth ?? '0'
   return {
     id: nft.id,
     name: nft.name,
@@ -25,6 +26,7 @@ export function toSummary(nft: SeedNft): NftSummary {
     priceFromEth,
     originalPriceEth: nft.originalPriceEth,
     inStock,
+    defaultEditionId: inStock ? (cheapest?.id ?? null) : null,
     featured: nft.featured,
     createdAt: nft.createdAt,
     version: nft.version,

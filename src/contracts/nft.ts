@@ -73,6 +73,8 @@ export interface NftSummary {
   originalPriceEth: Eth | null
   /** Há pelo menos uma edição disponível. */
   inStock: boolean
+  /** Edição mais barata disponível: usada no "adicionar ao carrinho" do card. */
+  defaultEditionId: string | null
   featured: boolean
   createdAt: string
   /** Aumenta a cada mudança de preço ou estoque. Usado para ignorar eventos antigos. */
