@@ -25,6 +25,14 @@ async function bootstrap() {
       <App />
     </StrictMode>,
   )
+
+  // Painel de cenários da demonstração (camada de mocks, raiz React separada do app).
+  if (import.meta.env.VITE_ENABLE_MOCKS !== 'false' && !navigator.webdriver) {
+    const { MockPanel } = await import('./mocks/MockPanel')
+    const el = document.createElement('div')
+    document.body.appendChild(el)
+    createRoot(el).render(<MockPanel />)
+  }
 }
 
 void bootstrap()
