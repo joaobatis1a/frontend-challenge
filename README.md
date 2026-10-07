@@ -106,4 +106,8 @@ Entre como Ana, adicione um NFT ao carrinho e siga:
 
 ## Uso de IA
 
-Usei ferramentas de IA como apoio durante o desenvolvimento. As decisões de arquitetura e o código foram revisados e entendidos por mim.
+Usei IA (Claude) como apoio no desenvolvimento, o que o enunciado permite.
+
+Ela me ajudou principalmente com a estrutura de pastas, o código das telas e dos mocks, os testes Playwright e a documentação.
+
+A minha parte foi definir os requisitos a partir do enunciado, revisar o código, rodar e depurar os testes e entender as decisões de arquitetura: a estratégia de cache, a idempotência dos pedidos, o tempo real com reconciliação e a camada de mocks.

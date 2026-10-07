@@ -19,14 +19,16 @@ export const worker = setupWorker(
   ...socketHandlers,
 )
 
-/** Prepara banco, cenário e controles e liga o service worker. */
+/** Prepara banco e cenário, liga o service worker e só então expõe os controles. */
 export async function startMocks(): Promise<void> {
   initScenario()
   await initDb()
-  installControls()
   await worker.start({
     onUnhandledRequest: 'bypass',
     serviceWorker: { url: `${import.meta.env.BASE_URL}mockServiceWorker.js` },
   })
+  // window.__mock só existe depois que o worker intercepta as requisições:
+  // quem espera por ele (testes, painel) pode chamar a API com segurança.
+  installControls()
   settleDueOrders()
 }

@@ -242,4 +242,4 @@ Mediana de 3 medições por página e perfil, build de produção, cenário padr
 - Não há blockchain, carteira ou pagamento reais: hash e link de explorador são simulados (o link aponta para um domínio fictício, sinalizado na tela).
 - O recorte das imagens a partir dos frames limita a resolução (480 px).
 - As baselines visuais dependem do sistema operacional (antialiasing de fontes).
-- A performance mobile no Lighthouse fica abaixo de 90 pelo custo de iniciar a camada de mocks antes da primeira resposta (análise no README).
+- A performance mobile no Lighthouse fica abaixo de 90 pelo custo de iniciar a camada de mocks antes da primeira resposta (análise na seção Performance e Lighthouse, acima).
