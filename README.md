@@ -2,7 +2,8 @@
 
 Implementação do [desafio frontend](https://github.com/junglegaming/frontend-challenge): marketplace de NFTs com descoberta, compra e conta do colecionador, em desktop e mobile, seguindo o layout do Figma.
 
-- **Aplicação publicada:** _(link do deploy)_
+- **Aplicação publicada:** https://frontend-challenge-kurio.vercel.app
+- **Repositório:** https://github.com/joaobatis1a/frontend-challenge
 - **Arquitetura, contratos e decisões:** [ARCHITECTURE.md](./ARCHITECTURE.md)
 - **Auditoria Lighthouse:** [lighthouse/summary.md](./lighthouse/summary.md)
 
@@ -59,6 +60,7 @@ Todas são opcionais.
 | `VITE_ENABLE_MOCKS` | ligado | `false` desliga o MSW (não há backend real, então só faz sentido com uma API própria em `/api`) |
 | `VITE_MOCK_SCENARIO` | `default` | Cenário inicial da API simulada |
 | `PW_CHROMIUM_PATH` | — | Caminho de um Chromium já instalado, para o Playwright |
+| `E2E_BASE_URL` | preview local | Roda os testes contra outra URL, sem subir o preview (ex.: o deploy) |
 | `CHROME_PATH` | Chromium do Playwright | Navegador usado pelo Lighthouse |
 | `LH_BASE_URL` / `LH_RUNS` | preview local / 3 | Auditar outra URL / número de medições |
 
@@ -78,7 +80,7 @@ Também dá para criar uma conta nova pelo cadastro. As senhas ficam no banco si
 O cenário controla latência, falhas e desfechos da API. Ele pode ser escolhido de quatro formas:
 
 1. **Painel "Cenários"** no canto inferior esquerdo da aplicação (também no deploy): escolha e clique em **Aplicar**.
-2. **URL:** `?scenario=<id>` (ex.: `https://…/?scenario=slow`). Fica salvo na aba (sessionStorage).
+2. **URL:** `?scenario=<id>` (ex.: https://frontend-challenge-kurio.vercel.app/?scenario=slow). Fica salvo na aba (sessionStorage).
 3. **Variável** `VITE_MOCK_SCENARIO` no build.
 4. **Console/testes:** `window.__mock.setScenario('<id>')`.
 
@@ -179,7 +181,15 @@ Mediana de 3 medições por página e perfil (build de produção, cenário padr
 
 ## Deploy
 
-O projeto está pronto para a Vercel (`vercel.json`): build `npm run build`, saída `dist/`, rewrite de SPA para que acesso direto e refresh funcionem em qualquer rota, e o `mockServiceWorker.js` servido sem cache. Netlify e Cloudflare Pages funcionam com a mesma configuração de SPA.
+Publicado na Vercel: **https://frontend-challenge-kurio.vercel.app** (deploy automático a cada push na `main`).
+
+Configuração em `vercel.json`: build `npm run build`, saída `dist/`, rewrite de SPA (acesso direto e refresh funcionam em qualquer rota) e `mockServiceWorker.js` sem cache. Os mocks e o tempo real ficam ativos no build publicado.
+
+Para rodar os testes contra o deploy:
+
+```bash
+E2E_BASE_URL=https://frontend-challenge-kurio.vercel.app npx playwright test --project=desktop
+```
 
 ## Estrutura
 
