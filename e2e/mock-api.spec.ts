@@ -81,9 +81,9 @@ test('login, carrinho, cotação e pedido idempotente', async ({ page }) => {
   const conflict = await api(page, 'POST', '/api/orders', { token, body: { ...orderBody, collector: { ...orderBody.collector, note: 'outro conteúdo' } }, headers })
   expect(conflict.json.code).toBe('idempotency_conflict')
 
-  // O carrinho foi esvaziado e só existe um pedido.
+  // Enquanto pendente, os itens continuam no carrinho; só existe um pedido.
   const cart = await api(page, 'GET', '/api/cart', { token })
-  expect(cart.json.lines).toEqual([])
+  expect(cart.json.lines).toHaveLength(1)
   const orders = await api(page, 'GET', '/api/orders', { token })
   expect(orders.json).toHaveLength(1)
 
@@ -96,6 +96,9 @@ test('login, carrinho, cotação e pedido idempotente', async ({ page }) => {
   await expect
     .poll(async () => (await api(page, 'GET', `/api/orders/${first.json.id}`, { token })).json.status, { timeout: 5000 })
     .toBe('confirmed')
+  // Confirmado: os itens comprados saem do carrinho.
+  const after = await api(page, 'GET', '/api/cart', { token })
+  expect(after.json.lines).toEqual([])
 })
 
 test('cotação desatualizada devolve 409 quote_outdated', async ({ page }) => {

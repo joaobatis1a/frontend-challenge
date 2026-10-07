@@ -144,9 +144,8 @@ export const orderHandlers = [
     }
     db.orders.unshift(order)
     db.idempotency[idemKey] = { requestHash, orderId: order.id }
-    cart.lines = []
-    cart.couponCode = null
-    cart.version += 1
+    // O carrinho só muda quando o pedido é confirmado (veja domain/orders.ts):
+    // em caso de recusa, os itens continuam lá.
     commit()
     scheduleSettlement(order)
     emitOrderUpdated(order)

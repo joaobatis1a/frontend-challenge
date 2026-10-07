@@ -18,6 +18,22 @@ function restock(order: DbOrder): void {
   }
 }
 
+/**
+ * Pedido confirmado: tira do carrinho só os itens e quantidades comprados.
+ * Se o usuário adicionou mais unidades enquanto o pedido estava pendente, elas ficam.
+ */
+function removePurchasedFromCart(order: DbOrder): void {
+  const cart = getDb().carts[order.userId]
+  if (!cart) return
+  for (const item of order.snapshot.items) {
+    const line = cart.lines.find((l) => l.editionId === item.editionId)
+    if (line) line.quantity -= item.quantity
+  }
+  cart.lines = cart.lines.filter((l) => l.quantity > 0)
+  if (order.snapshot.couponCode && cart.couponCode === order.snapshot.couponCode) cart.couponCode = null
+  cart.version += 1
+}
+
 /** Leva um pedido pendente ao estado final, conforme o cenário. */
 export function settleOrder(order: DbOrder): void {
   if (order.status !== 'pending') return
@@ -32,6 +48,7 @@ export function settleOrder(order: DbOrder): void {
   } else {
     const hash = fakeTxHash(order.id)
     order.transaction = { hash, explorerUrl: `https://explorer.example/tx/${hash}` }
+    removePurchasedFromCart(order)
   }
   const timer = timers.get(order.id)
   if (timer) clearTimeout(timer)
