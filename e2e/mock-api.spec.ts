@@ -26,17 +26,24 @@ test.beforeEach(async ({ page }) => {
   await page.evaluate(() => (window as any).__mock.reset())
 })
 
-test('catálogo: paginação, busca sem acento e ordenação por preço', async ({ page }) => {
+test('catálogo: paginação, busca, filtros combinados e ordenação por preço', async ({ page }) => {
   const list = await api(page, 'GET', '/api/nfts')
   expect(list.status).toBe(200)
-  expect(list.json.items).toHaveLength(12)
+  expect(list.json.items).toHaveLength(9)
   expect(list.json.total).toBe(48)
+  expect(list.json.items[0].name).toBe('Emerald Ape #042')
 
-  const search = await api(page, 'GET', '/api/nfts?q=mare&sort=price_asc')
-  expect(search.json.query.q).toBe('mare')
+  // Busca sem diferenciar maiúsculas, com ordenação por preço.
+  const search = await api(page, 'GET', '/api/nfts?q=golden&sort=price_asc')
+  expect(search.json.query.q).toBe('golden')
   const prices = search.json.items.map((i: any) => Number(i.priceFromEth))
   expect([...prices].sort((a, b) => a - b)).toEqual(prices)
-  expect(search.json.items.every((i: any) => /mar[eé]/i.test(i.name))).toBe(true)
+  expect(search.json.items.every((i: any) => /golden/i.test(`${i.name} ${i.collection}`))).toBe(true)
+
+  // Filtros combinados e contagens por filtro.
+  const combo = await api(page, 'GET', '/api/nfts?network=polygon&category=music&category=photography')
+  expect(combo.json.items.every((i: any) => i.network === 'polygon' && ['music', 'photography'].includes(i.category))).toBe(true)
+  expect(combo.json.facets.network.ethereum).toBeGreaterThan(0)
 })
 
 test('login, carrinho, cotação e pedido idempotente', async ({ page }) => {
@@ -56,7 +63,7 @@ test('login, carrinho, cotação e pedido idempotente', async ({ page }) => {
 
   const wallets = await api(page, 'GET', '/api/wallets', { token })
   const orderBody = {
-    collector: { fullName: 'Ana Colecionadora', email: 'ana@example.com', country: 'Brasil' },
+    collector: { displayName: 'Ana Colecionadora', username: 'ana_colecionadora', email: 'ana@example.com' },
     walletId: wallets.json[0].id,
     network: 'polygon',
     quoteFingerprint: quote.json.fingerprint,
@@ -71,7 +78,7 @@ test('login, carrinho, cotação e pedido idempotente', async ({ page }) => {
   expect(repeat.status).toBe(200)
   expect(repeat.json.id).toBe(first.json.id)
 
-  const conflict = await api(page, 'POST', '/api/orders', { token, body: { ...orderBody, country: 'x', collector: { ...orderBody.collector, country: 'Chile' } }, headers })
+  const conflict = await api(page, 'POST', '/api/orders', { token, body: { ...orderBody, collector: { ...orderBody.collector, note: 'outro conteúdo' } }, headers })
   expect(conflict.json.code).toBe('idempotency_conflict')
 
   // O carrinho foi esvaziado e só existe um pedido.
@@ -102,7 +109,7 @@ test('cotação desatualizada devolve 409 quote_outdated', async ({ page }) => {
     token,
     headers: { 'Idempotency-Key': 'k1' },
     body: {
-      collector: { fullName: 'Ana Colecionadora', email: 'ana@example.com', country: 'Brasil' },
+      collector: { displayName: 'Ana Colecionadora', username: 'ana_colecionadora', email: 'ana@example.com' },
       walletId: wallets.json[0].id,
       network: 'ethereum',
       quoteFingerprint: quote.json.fingerprint,
@@ -132,7 +139,7 @@ test('limites de estoque e validações', async ({ page }) => {
   const over = await api(page, 'POST', '/api/cart/items', { token, body: { nftId: 'nft-11', editionId: 'nft-11-std', quantity: 3 } })
   expect(over.status).toBe(409)
   expect(over.json.code).toBe('availability_conflict')
-  const soldOut = await api(page, 'POST', '/api/cart/items', { token, body: { nftId: 'nft-07', editionId: 'nft-07-std', quantity: 1 } })
+  const soldOut = await api(page, 'POST', '/api/cart/items', { token, body: { nftId: 'nft-10', editionId: 'nft-10-std', quantity: 1 } })
   expect(soldOut.json.code).toBe('availability_conflict')
   const invalid = await api(page, 'POST', '/api/auth/signup', { body: { name: 'A', email: 'x', password: '123' } })
   expect(invalid.status).toBe(422)
@@ -152,10 +159,10 @@ test('carteiras: limite de 2 e endereço duplicado', async ({ page }) => {
   const login = await api(page, 'POST', '/api/auth/login', { body: { email: 'bruno@example.com', password: 'Senha@456' } })
   const token = login.json.token
   const addr = '0x' + 'a'.repeat(40)
-  const ok = await api(page, 'POST', '/api/wallets', { token, body: { label: 'Segunda', address: addr, network: 'ethereum' } })
+  const ok = await api(page, 'POST', '/api/wallets', { token, body: { label: 'Segunda', address: addr, network: 'ethereum', provider: 'metamask' } })
   expect(ok.status).toBe(201)
-  const dup = await api(page, 'POST', '/api/wallets', { token, body: { label: 'Outra', address: addr, network: 'ethereum' } })
+  const dup = await api(page, 'POST', '/api/wallets', { token, body: { label: 'Outra', address: addr, network: 'ethereum', provider: 'metamask' } })
   expect(dup.json.code === 'wallet_address_taken' || dup.status === 422).toBe(true)
-  const limit = await api(page, 'POST', '/api/wallets', { token, body: { label: 'Terceira', address: '0x' + 'b'.repeat(40), network: 'ethereum' } })
+  const limit = await api(page, 'POST', '/api/wallets', { token, body: { label: 'Terceira', address: '0x' + 'b'.repeat(40), network: 'ethereum', provider: 'coinbase' } })
   expect(limit.status).toBe(422)
 })

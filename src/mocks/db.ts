@@ -10,7 +10,7 @@ import {
   type SeedNft,
 } from './seed'
 
-const STORAGE_KEY = 'mock:db:v1'
+const STORAGE_KEY = 'mock:db:v2'
 
 export interface DbUser extends User {
   salt: string
@@ -72,6 +72,7 @@ async function buildInitialDb(): Promise<Db> {
       email: seed.email,
       username: seed.username,
       bio: seed.bio,
+      ensName: seed.ensName,
       avatarUrl: null,
       createdAt: '2026-08-01T12:00:00.000Z',
       salt,

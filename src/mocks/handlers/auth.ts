@@ -61,6 +61,7 @@ export const authHandlers = [
       email,
       username: usernameFrom(email),
       bio: '',
+      ensName: null,
       avatarUrl: null,
       createdAt: new Date().toISOString(),
       salt,

@@ -37,15 +37,23 @@ export const accountHandlers = [
     if (!auth.ok) return auth.response
     const parsed = parseBody(profileUpdateSchema, await readJson(request))
     if (!parsed.ok) return parsed.response
-    const { name, username, bio } = parsed.data
-    if (username && getDb().users.some((u) => u.username === username && u.id !== auth.user.id)) {
+    const { name, username, bio, email, ensName } = parsed.data
+    const others = getDb().users.filter((u) => u.id !== auth.user.id)
+    if (username && others.some((u) => u.username === username)) {
       return apiError('validation_error', 'Nome de usuário já em uso.', {
         fieldErrors: { username: 'Este nome de usuário já está em uso' },
+      })
+    }
+    if (email && others.some((u) => u.email === email)) {
+      return apiError('email_taken', 'Este e-mail já está cadastrado.', {
+        fieldErrors: { email: 'Este e-mail já está cadastrado' },
       })
     }
     if (name !== undefined) auth.user.name = name
     if (username !== undefined) auth.user.username = username
     if (bio !== undefined) auth.user.bio = bio
+    if (email !== undefined) auth.user.email = email
+    if (ensName !== undefined) auth.user.ensName = ensName || null
     commit()
     return HttpResponse.json(publicUser(auth.user))
   }),
@@ -132,6 +140,8 @@ export const accountHandlers = [
       label: parsed.data.label,
       address: parsed.data.address,
       network: parsed.data.network,
+      provider: parsed.data.provider,
+      ensName: parsed.data.ensName || null,
       isPrimary: makePrimary,
     }
     list.push(wallet)
@@ -150,7 +160,7 @@ export const accountHandlers = [
     const list = userWallets(auth.user.id)
     const wallet = list.find((w) => w.id === params.id)
     if (!wallet) return apiError('not_found', 'Carteira não encontrada.')
-    const { label, address, network, isPrimary } = parsed.data
+    const { label, address, network, isPrimary, provider, ensName } = parsed.data
     if (address && address.toLowerCase() !== wallet.address.toLowerCase()) {
       const taken = Object.values(getDb().wallets)
         .flat()
@@ -164,6 +174,8 @@ export const accountHandlers = [
     }
     if (label !== undefined) wallet.label = label
     if (network !== undefined) wallet.network = network
+    if (provider !== undefined) wallet.provider = provider
+    if (ensName !== undefined) wallet.ensName = ensName || null
     if (isPrimary === true) for (const w of list) w.isPrimary = w.id === wallet.id
     commit()
     return HttpResponse.json(wallet)

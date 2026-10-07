@@ -3,11 +3,23 @@ import { NETWORKS, type NetworkId } from './cart'
 
 export const MAX_WALLETS = 2 // uma principal e uma secundária
 
+export const WALLET_PROVIDERS = ['metamask', 'walletconnect', 'coinbase'] as const
+export type WalletProvider = (typeof WALLET_PROVIDERS)[number]
+
+export const PROVIDER_LABELS: Record<WalletProvider, string> = {
+  metamask: 'MetaMask',
+  walletconnect: 'WalletConnect',
+  coinbase: 'Coinbase Wallet',
+}
+
 export interface Wallet {
   id: string
   label: string
   address: string
   network: NetworkId
+  provider: WalletProvider
+  /** ENS ou identificação secundária opcional (ex.: "nova.kurio.eth"). */
+  ensName: string | null
   isPrimary: boolean
 }
 
@@ -19,7 +31,10 @@ const addressSchema = z
 export const walletCreateSchema = z.object({
   label: z.string().trim().min(2, 'Dê um nome à carteira').max(30, 'Máximo de 30 caracteres'),
   address: addressSchema,
-  network: z.enum(NETWORKS),
+  network: z.enum(NETWORKS, { error: 'Selecione uma rede' }),
+  provider: z.enum(WALLET_PROVIDERS, { error: 'Selecione o tipo de carteira' }),
+  /** Vazio remove o ENS. */
+  ensName: z.string().trim().max(60, 'Máximo de 60 caracteres').optional(),
   isPrimary: z.boolean().optional(),
 })
 export type WalletCreateInput = z.infer<typeof walletCreateSchema>

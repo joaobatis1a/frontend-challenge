@@ -2,7 +2,8 @@ import type { NftDetail, NftSummary } from '@/contracts/nft'
 import { ethGt } from '@/contracts/money'
 import type { SeedNft } from '../seed'
 
-const imagePath = (n: number, suffix = ''): string => `/images/nft/${n}${suffix}.svg`
+export const imagePath = (nft: Pick<SeedNft, 'persona'>, suffix = ''): string =>
+  `/images/nft/${nft.persona}${suffix}.webp`
 
 export function toSummary(nft: SeedNft): NftSummary {
   const inStock = nft.editions.some((e) => e.available > 0)
@@ -14,11 +15,15 @@ export function toSummary(nft: SeedNft): NftSummary {
   return {
     id: nft.id,
     name: nft.name,
+    tokenId: nft.tokenId,
     collection: nft.collection,
     category: nft.category,
+    network: nft.network,
+    rarity: nft.rarity,
     creator: nft.creator,
-    image: imagePath(nft.imageIndex),
+    image: imagePath(nft),
     priceFromEth,
+    originalPriceEth: nft.originalPriceEth,
     inStock,
     featured: nft.featured,
     createdAt: nft.createdAt,
@@ -30,9 +35,14 @@ export function toDetail(nft: SeedNft): NftDetail {
   return {
     ...toSummary(nft),
     description: nft.description,
-    gallery: [imagePath(nft.imageIndex), imagePath(nft.imageIndex, '-2'), imagePath(nft.imageIndex, '-3')],
+    gallery: [imagePath(nft), imagePath(nft, '-2'), imagePath(nft, '-3'), imagePath(nft)],
     attributes: nft.attributes,
     editions: nft.editions,
+    contractAddress: nft.contractAddress,
+    royaltyPercent: nft.royaltyPercent,
+    rating: nft.rating,
+    reviewCount: 16 + (Number.parseInt(nft.id.slice(4), 10) % 9),
+    reviews: nft.reviews,
   }
 }
 

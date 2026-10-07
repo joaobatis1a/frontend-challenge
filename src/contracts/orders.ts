@@ -1,6 +1,7 @@
 import { z } from 'zod'
 import type { Eth } from './money'
 import { NETWORKS, type NetworkId } from './cart'
+import type { WalletProvider } from './wallets'
 
 export const ORDER_STATUSES = ['pending', 'confirmed', 'rejected'] as const
 export type OrderStatus = (typeof ORDER_STATUSES)[number]
@@ -8,17 +9,23 @@ export type OrderStatus = (typeof ORDER_STATUSES)[number]
 /** Pedidos confirmados ou recusados são terminais: nada mais os altera. */
 export const isTerminalOrder = (status: OrderStatus): boolean => status !== 'pending'
 
+/** Campos de "Perfil do colecionador" na tela de pagamento. */
 export const collectorSchema = z.object({
-  fullName: z.string().trim().min(3, 'Informe o nome completo'),
+  displayName: z.string().trim().min(2, 'Informe o nome de exibição'),
+  username: z
+    .string()
+    .trim()
+    .min(3, 'Mínimo de 3 caracteres')
+    .regex(/^[a-z0-9_]+$/i, 'Use apenas letras, números e _'),
   email: z.string().trim().toLowerCase().email('E-mail inválido'),
-  country: z.string().trim().min(2, 'Informe o país'),
+  note: z.string().trim().max(280, 'Máximo de 280 caracteres').optional(),
 })
 export type CollectorInput = z.infer<typeof collectorSchema>
 
 export const createOrderSchema = z.object({
   collector: collectorSchema,
   walletId: z.string().min(1, 'Selecione uma carteira'),
-  network: z.enum(NETWORKS),
+  network: z.enum(NETWORKS, { error: 'Selecione uma rede' }),
   /** Impressão digital da cotação que o usuário revisou. */
   quoteFingerprint: z.string().min(1),
   /** Total que o usuário viu na revisão. */
@@ -30,6 +37,7 @@ export interface OrderItemSnapshot {
   nftId: string
   editionId: string
   name: string
+  tokenId: string
   image: string
   editionLabel: string
   quantity: number
@@ -47,6 +55,7 @@ export interface OrderSnapshot {
   totalEth: Eth
   network: NetworkId
   walletAddress: string
+  walletProvider: WalletProvider
   collector: CollectorInput
 }
 

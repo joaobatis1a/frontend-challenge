@@ -16,6 +16,7 @@ export interface CartLine {
   nftId: string
   editionId: string
   name: string
+  tokenId: string
   image: string
   collection: string
   editionLabel: string
@@ -57,6 +58,8 @@ export interface QuoteLine {
   nftId: string
   editionId: string
   name: string
+  tokenId: string
+  image: string
   editionLabel: string
   quantity: number
   unitPriceEth: Eth

@@ -95,12 +95,12 @@ export const orderHandlers = [
     }
 
     const items: OrderItemSnapshot[] = quote.lines.map((l) => {
-      const nft = db.nfts.find((n) => n.id === l.nftId)
       return {
         nftId: l.nftId,
         editionId: l.editionId,
         name: l.name,
-        image: `/images/nft/${nft?.imageIndex ?? 1}.svg`,
+        tokenId: l.tokenId,
+        image: l.image,
         editionLabel: l.editionLabel,
         quantity: l.quantity,
         unitPriceEth: l.unitPriceEth,
@@ -135,6 +135,7 @@ export const orderHandlers = [
         totalEth: quote.totalEth,
         network: input.network,
         walletAddress: wallet.address,
+        walletProvider: wallet.provider,
         collector: input.collector,
       },
       transaction: null,

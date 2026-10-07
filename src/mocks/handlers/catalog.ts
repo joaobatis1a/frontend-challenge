@@ -1,9 +1,11 @@
 import { http, HttpResponse } from 'msw'
+import { NETWORKS, type NetworkId } from '@/contracts/cart'
 import { ethGt } from '@/contracts/money'
 import {
   CATALOG_PAGE_SIZE,
   NFT_CATEGORIES,
   NFT_SORTS,
+  type CatalogFacets,
   type FavoritesResponse,
   type NftCategory,
   type NftListResponse,
@@ -16,22 +18,42 @@ import { apiError, gate, requireAuth } from '../http-utils'
 import { getScenario } from '../scenarios'
 
 const isCategory = (v: string): v is NftCategory => (NFT_CATEGORIES as readonly string[]).includes(v)
+const isNetwork = (v: string): v is NetworkId => (NETWORKS as readonly string[]).includes(v)
 const isSort = (v: string): v is NftSort => (NFT_SORTS as readonly string[]).includes(v)
+
+const byPrice = (a: NftSummary, b: NftSummary) =>
+  ethGt(a.priceFromEth, b.priceFromEth) ? 1 : ethGt(b.priceFromEth, a.priceFromEth) ? -1 : 0
 
 function sortItems(items: NftSummary[], sort: NftSort): NftSummary[] {
   const copy = [...items]
   const byNewest = (a: NftSummary, b: NftSummary) => b.createdAt.localeCompare(a.createdAt)
   switch (sort) {
-    case 'newest':
-      return copy.sort(byNewest)
+    case 'featured':
+      return copy.sort((a, b) => Number(b.featured) - Number(a.featured) || byNewest(a, b))
     case 'price_asc':
-      return copy.sort((a, b) => (ethGt(a.priceFromEth, b.priceFromEth) ? 1 : ethGt(b.priceFromEth, a.priceFromEth) ? -1 : 0))
+      return copy.sort(byPrice)
     case 'price_desc':
-      return copy.sort((a, b) => (ethGt(b.priceFromEth, a.priceFromEth) ? 1 : ethGt(a.priceFromEth, b.priceFromEth) ? -1 : 0))
+      return copy.sort((a, b) => byPrice(b, a))
     case 'name':
       return copy.sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'))
     default:
-      return copy.sort((a, b) => Number(b.featured) - Number(a.featured) || byNewest(a, b))
+      return copy.sort(byNewest)
+  }
+}
+
+/** Conta quantos itens cada opção de filtro teria (sobre o resultado da busca textual). */
+function buildFacets(items: NftSummary[], all: NftSummary[]): CatalogFacets {
+  const category = Object.fromEntries(NFT_CATEGORIES.map((c) => [c, 0])) as Record<NftCategory, number>
+  const network = Object.fromEntries(NETWORKS.map((n) => [n, 0])) as Record<NetworkId, number>
+  for (const item of items) {
+    category[item.category] += 1
+    network[item.network] += 1
+  }
+  const prices = [...all].sort(byPrice)
+  return {
+    category,
+    network,
+    priceRange: { min: prices[0]?.priceFromEth ?? '0', max: prices[prices.length - 1]?.priceFromEth ?? '0' },
   }
 }
 
@@ -52,22 +74,26 @@ export const catalogHandlers = [
     if (blocked) return blocked
 
     const category = params.getAll('category').filter(isCategory)
+    const network = params.getAll('network').filter(isNetwork)
     const minPrice = params.get('minPrice')
     const maxPrice = params.get('maxPrice')
     const inStock = params.get('inStock') === 'true'
+    const featured = params.get('featured') === 'true'
     const sortParam = params.get('sort') ?? ''
-    const sort: NftSort = isSort(sortParam) ? sortParam : 'featured'
+    const sort: NftSort = isSort(sortParam) ? sortParam : 'newest'
     const page = Math.max(1, Number.parseInt(params.get('page') ?? '1', 10) || 1)
 
-    let items = getScenario().catalogEmpty ? [] : getDb().nfts.map(toSummary)
+    const all = getScenario().catalogEmpty ? [] : getDb().nfts.map(toSummary)
+    let items = all
     if (q) {
       const needle = normalize(q)
-      items = items.filter((n) =>
-        normalize(`${n.name} ${n.collection} ${n.creator.name}`).includes(needle),
-      )
+      items = items.filter((n) => normalize(`${n.name} ${n.collection} ${n.creator.name}`).includes(needle))
     }
+    const facets = buildFacets(items, all)
     if (category.length) items = items.filter((n) => category.includes(n.category))
+    if (network.length) items = items.filter((n) => network.includes(n.network))
     if (inStock) items = items.filter((n) => n.inStock)
+    if (featured) items = items.filter((n) => n.featured)
     if (minPrice) items = items.filter((n) => !ethGt(minPrice, n.priceFromEth))
     if (maxPrice) items = items.filter((n) => !ethGt(n.priceFromEth, maxPrice))
     items = sortItems(items, sort)
@@ -81,7 +107,8 @@ export const catalogHandlers = [
       pageSize: CATALOG_PAGE_SIZE,
       total,
       totalPages,
-      query: { q, category, minPrice, maxPrice, inStock, sort, page },
+      facets,
+      query: { q, category, network, minPrice, maxPrice, inStock, featured, sort, page },
     }
     return HttpResponse.json(body)
   }),

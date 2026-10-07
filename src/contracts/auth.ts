@@ -6,6 +6,8 @@ export interface User {
   email: string
   username: string
   bio: string
+  /** Nome ENS simulado (ex.: "ana.eth"). */
+  ensName: string | null
   avatarUrl: string | null
   createdAt: string
 }
@@ -21,7 +23,13 @@ export interface SessionResponse {
   expiresAt: string
 }
 
+const ensNameSchema = z
+  .string()
+  .trim()
+  .regex(/^[a-z0-9-]{3,32}$/, 'Use de 3 a 32 letras minúsculas, números ou hífen')
+
 export const signupSchema = z.object({
+  /** No cadastro o layout pede o nome de usuário; ele também vira o nome de exibição. */
   name: z.string().trim().min(2, 'Informe seu nome'),
   email: z.string().trim().toLowerCase().email('E-mail inválido'),
   password: z
@@ -49,6 +57,9 @@ export const profileUpdateSchema = z.object({
     .min(3, 'Mínimo de 3 caracteres')
     .regex(/^[a-z0-9_]+$/i, 'Use apenas letras, números e _')
     .optional(),
+  email: z.string().trim().toLowerCase().email('E-mail inválido').optional(),
+  /** Sem o sufixo ".eth"; vazio remove o nome ENS. */
+  ensName: z.union([ensNameSchema, z.literal('')]).optional(),
   bio: z.string().max(280, 'Máximo de 280 caracteres').optional(),
 })
 export type ProfileUpdateInput = z.infer<typeof profileUpdateSchema>

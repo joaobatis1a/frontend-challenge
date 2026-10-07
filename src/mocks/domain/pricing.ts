@@ -3,6 +3,7 @@ import { ethAdd, ethMul, ethPercent, ethSub, ZERO_ETH } from '@/contracts/money'
 import type { DbCart } from '../db'
 import { getDb } from '../db'
 import { fnv1a } from '../crypto'
+import { imagePath } from './catalog'
 import { COUPONS, NETWORK_FEES } from '../seed'
 
 function findEdition(nftId: string, editionId: string) {
@@ -20,7 +21,8 @@ export function toCart(cart: DbCart): Cart {
       nftId: line.nftId,
       editionId: line.editionId,
       name: found.nft.name,
-      image: `/images/nft/${found.nft.imageIndex}.svg`,
+      tokenId: found.nft.tokenId,
+      image: imagePath(found.nft),
       collection: found.nft.collection,
       editionLabel: found.edition.label,
       quantity: line.quantity,
@@ -48,6 +50,8 @@ export function buildQuote(cart: DbCart, network: NetworkId): Quote {
       nftId: line.nftId,
       editionId: line.editionId,
       name: line.name,
+      tokenId: line.tokenId,
+      image: line.image,
       editionLabel: line.editionLabel,
       quantity: line.quantity,
       unitPriceEth: line.unitPriceEth,
