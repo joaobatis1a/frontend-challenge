@@ -3,23 +3,22 @@ import './index.css'
 /**
  * IMPORTANTE: o MSW precisa iniciar ANTES de qualquer código que use WebSocket.
  * O socket.io-client guarda o `WebSocket` nativo quando o módulo é carregado,
- * então o app (que importa o socket.io-client) só é importado depois que o
- * worker trocou essa referência.
+ * por isso ele é importado de forma dinâmica no RealtimeProvider, que só monta
+ * depois que o worker trocou essa referência.
  *
  * Os mocks ligam por configuração: `VITE_ENABLE_MOCKS` (padrão: ligado, pois
  * esta entrega não tem backend real).
  */
 async function bootstrap() {
+  // O app começa a baixar já, em paralelo com o MSW (ele não abre WebSocket ao carregar).
+  const appModules = Promise.all([import('react'), import('react-dom/client'), import('./app/App')])
+
   if (import.meta.env.VITE_ENABLE_MOCKS !== 'false') {
     const { startMocks } = await import('./mocks/browser')
     await startMocks()
   }
 
-  const [{ StrictMode }, { createRoot }, { App }] = await Promise.all([
-    import('react'),
-    import('react-dom/client'),
-    import('./app/App'),
-  ])
+  const [{ StrictMode }, { createRoot }, { App }] = await appModules
   createRoot(document.getElementById('root')!).render(
     <StrictMode>
       <App />

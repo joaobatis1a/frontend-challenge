@@ -2,6 +2,7 @@ import {
   createRootRouteWithContext,
   createRoute,
   createRouter,
+  lazyRouteComponent,
   redirect,
   type ParsedLocation,
 } from '@tanstack/react-router'
@@ -12,14 +13,6 @@ import { activeToken, sessionStore } from '@/lib/session/store'
 import { RootLayout } from './RootLayout'
 import { NotFoundPage } from '@/pages/NotFoundPage'
 import { HomePage } from '@/pages/HomePage'
-import { NftDetailPage } from '@/pages/NftDetailPage'
-import { CartPage } from '@/pages/CartPage'
-import { CheckoutPage } from '@/pages/CheckoutPage'
-import { OrderPage } from '@/pages/OrderPage'
-import { LoginPage } from '@/pages/LoginPage'
-import { SignupPage } from '@/pages/SignupPage'
-import { ProfilePage } from '@/pages/ProfilePage'
-import { WalletsPage } from '@/pages/WalletsPage'
 
 export interface RouterContext {
   queryClient: QueryClient
@@ -51,27 +44,27 @@ const homeRoute = createRoute({
 const nftRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/nft/$nftId',
-  component: NftDetailPage,
+  component: lazyRouteComponent(() => import('@/pages/NftDetailPage'), 'NftDetailPage'),
 })
 
 const cartRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/cart',
-  component: CartPage,
+  component: lazyRouteComponent(() => import('@/pages/CartPage'), 'CartPage'),
 })
 
 const checkoutRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/checkout',
   beforeLoad: requireAuth,
-  component: CheckoutPage,
+  component: lazyRouteComponent(() => import('@/pages/CheckoutPage'), 'CheckoutPage'),
 })
 
 const orderRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/orders/$orderId',
   beforeLoad: requireAuth,
-  component: OrderPage,
+  component: lazyRouteComponent(() => import('@/pages/OrderPage'), 'OrderPage'),
 })
 
 const authSearch = z.object({ redirect: z.string().optional() })
@@ -89,7 +82,7 @@ const loginRoute = createRoute({
   path: '/login',
   validateSearch: authSearch,
   beforeLoad: redirectIfAuthenticated,
-  component: LoginPage,
+  component: lazyRouteComponent(() => import('@/pages/LoginPage'), 'LoginPage'),
 })
 
 const signupRoute = createRoute({
@@ -97,21 +90,21 @@ const signupRoute = createRoute({
   path: '/signup',
   validateSearch: authSearch,
   beforeLoad: redirectIfAuthenticated,
-  component: SignupPage,
+  component: lazyRouteComponent(() => import('@/pages/SignupPage'), 'SignupPage'),
 })
 
 const profileRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/profile',
   beforeLoad: requireAuth,
-  component: ProfilePage,
+  component: lazyRouteComponent(() => import('@/pages/ProfilePage'), 'ProfilePage'),
 })
 
 const walletsRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/wallets',
   beforeLoad: requireAuth,
-  component: WalletsPage,
+  component: lazyRouteComponent(() => import('@/pages/WalletsPage'), 'WalletsPage'),
 })
 
 const routeTree = rootRoute.addChildren([
@@ -126,6 +119,7 @@ const routeTree = rootRoute.addChildren([
   walletsRoute,
 ])
 
+// Só a página inicial vai no pacote principal; as demais carregam sob demanda.
 export function createAppRouter(queryClient: QueryClient) {
   return createRouter({
     routeTree,

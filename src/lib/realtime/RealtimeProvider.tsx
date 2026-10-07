@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
-import { io } from 'socket.io-client'
+import type { Socket } from 'socket.io-client'
 import {
   SOCKET_EVENTS,
   type NftUpdatedEvent,
@@ -40,39 +40,50 @@ export function RealtimeProvider({ children }: { children: ReactNode }) {
   const listeners = useRef(new Set<(n: RealtimeNotice) => void>())
 
   useEffect(() => {
-    const socket = io(window.location.origin, {
-      path: '/socket.io',
-      transports: ['websocket'],
-      reconnectionDelay: 500,
-      reconnectionDelayMax: 3_000,
-    })
+    let socket: Socket | null = null
+    let cancelled = false
     const guard = new EventGuard()
     let connectedBefore = false
     const notify = (notice: RealtimeNotice | null) => {
       if (notice) for (const l of listeners.current) l(notice)
     }
 
-    socket.on('connect', () => {
-      socket.emit(SOCKET_EVENTS.subscribe, { token })
-      if (connectedBefore) {
-        // Reconciliação: busca de novo o que está na tela.
-        void qc.invalidateQueries({ queryKey: keys.nfts.all })
-        void qc.invalidateQueries({ queryKey: [owner] })
-      }
-      connectedBefore = true
+    const setup = (s: Socket) => {
+      s.on('connect', () => {
+        s.emit(SOCKET_EVENTS.subscribe, { token })
+        if (connectedBefore) {
+          // Reconciliação: busca de novo o que está na tela.
+          void qc.invalidateQueries({ queryKey: keys.nfts.all })
+          void qc.invalidateQueries({ queryKey: [owner] })
+        }
+        connectedBefore = true
+      })
+      s.on(SOCKET_EVENTS.subscribed, (_payload: SessionSubscribedPayload) => setStatus('connected'))
+      s.on('disconnect', () => setStatus('reconnecting'))
+      s.on(SOCKET_EVENTS.nftUpdated, (event: NftUpdatedEvent) => notify(applyNftUpdated(qc, guard, owner, event)))
+      s.on(SOCKET_EVENTS.orderUpdated, (event: OrderUpdatedEvent) =>
+        notify(applyOrderUpdated(qc, guard, owner, event)),
+      )
+    }
+
+    // Import dinâmico: o socket.io-client guarda o WebSocket nativo ao ser
+    // avaliado, então só é carregado aqui (depois que o MSW já iniciou). Isso
+    // também deixa o restante do app baixar em paralelo com o MSW.
+    void import('socket.io-client').then(({ io }) => {
+      if (cancelled) return
+      socket = io(window.location.origin, {
+        path: '/socket.io',
+        transports: ['websocket'],
+        reconnectionDelay: 500,
+        reconnectionDelayMax: 3_000,
+      })
+      setup(socket)
     })
-    socket.on(SOCKET_EVENTS.subscribed, (_payload: SessionSubscribedPayload) => setStatus('connected'))
-    socket.on('disconnect', () => setStatus('reconnecting'))
-    socket.on(SOCKET_EVENTS.nftUpdated, (event: NftUpdatedEvent) =>
-      notify(applyNftUpdated(qc, guard, owner, event)),
-    )
-    socket.on(SOCKET_EVENTS.orderUpdated, (event: OrderUpdatedEvent) =>
-      notify(applyOrderUpdated(qc, guard, owner, event)),
-    )
 
     return () => {
-      socket.removeAllListeners()
-      socket.disconnect()
+      cancelled = true
+      socket?.removeAllListeners()
+      socket?.disconnect()
       setStatus('connecting')
     }
   }, [qc, token, owner])
