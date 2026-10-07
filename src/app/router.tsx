@@ -76,10 +76,19 @@ const orderRoute = createRoute({
 
 const authSearch = z.object({ redirect: z.string().optional() })
 
+/** Quem já está logado não precisa ver login/cadastro: segue para o destino. */
+function redirectIfAuthenticated({ search }: { search: { redirect?: string } }) {
+  if (activeToken(sessionStore.get())) {
+    const target = search.redirect?.startsWith('/') && !search.redirect.startsWith('//') ? search.redirect : '/'
+    throw redirect({ href: target })
+  }
+}
+
 const loginRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/login',
   validateSearch: authSearch,
+  beforeLoad: redirectIfAuthenticated,
   component: LoginPage,
 })
 
@@ -87,6 +96,7 @@ const signupRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/signup',
   validateSearch: authSearch,
+  beforeLoad: redirectIfAuthenticated,
   component: SignupPage,
 })
 
