@@ -141,11 +141,11 @@ test('limites de estoque e validações', async ({ page }) => {
   expect(coupon.json.code).toBe('coupon_expired')
 })
 
-test('socket: nft.updated chega pelo cliente e o contador de conexões reflete a sessão', async ({ page }) => {
-  await expect(page.locator('#sock')).toContainText('subscribed')
-  await page.evaluate(() => (window as any).__mock.updateEdition('nft-03', 'nft-03-std', { available: 1 }))
-  await expect(page.locator('#events li')).toHaveText(['nft-03@2'])
-  expect(await page.evaluate(() => (window as any).__mock.socket.connections())).toBe(1)
+test('socket: o app mantém uma única conexão Socket.IO e reconecta após queda', async ({ page }) => {
+  const connections = () => page.evaluate(() => (window as any).__mock.socket.connections())
+  await expect.poll(connections).toBe(1)
+  expect(await page.evaluate(() => (window as any).__mock.socket.disconnect())).toBe(1)
+  await expect.poll(connections, { timeout: 5000 }).toBe(1)
 })
 
 test('carteiras: limite de 2 e endereço duplicado', async ({ page }) => {
